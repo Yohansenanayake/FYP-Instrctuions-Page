@@ -108,7 +108,17 @@
       animation: fadeUp 0.8s ease 0.45s forwards;
     }
 
-    .hero-title span {
+    .hero-brand {
+      display: block;
+      white-space: nowrap;
+      color: var(--dark);
+    }
+
+    .hero-xtm {
+      color: var(--orange);
+    }
+
+    .hero-subtitle {
       display: block;
       font-style: italic;
       color: var(--orange);
@@ -559,15 +569,15 @@
 
     <!-- ── HERO ─────────────────────────────────────── -->
     <header class="hero">
-      <p class="hero-eyebrow">AI Music Generation</p>
+      <p class="hero-eyebrow">Novel Symbolic Music Generation Model</p>
       <h1 class="hero-title">
-        Listening Test
-        <span>Participant Guide</span>
+        <span class="hero-brand">Musi<span class="hero-xtm">xLTM</span></span>
+        <span class="hero-subtitle">Listening Test Guide</span>
       </h1>
       <div class="rule"></div>
       <p class="hero-desc">
-        You've been invited to take part in a subjective listening study comparing
-        AI&#8209;generated music against human&#8209;composed pieces — all rendered from MIDI.
+        Evaluating a new model for structured, high&#8209;speed symbolic music generation —
+        your ratings help assess its musical quality.
       </p>
       <div class="hero-waveform" id="heroWave"></div>
     </header>
