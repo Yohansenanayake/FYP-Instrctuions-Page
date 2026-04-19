@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Music Study — Listening Test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #09090d;
+      --surface:   #111116;
+      --surface-2: #18181f;
+      --border:    rgba(255,255,255,0.065);
+      --gold:      #e9a825;
+      --gold-dim:  rgba(233,168,37,0.1);
+      --gold-glow: rgba(233,168,37,0.04);
+      --cream:     #ede8df;
+      --text:      #b8b3aa;
+      --white:     #f0ece6;
+      --muted:     #484856;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grain overlay ─────────────────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* ── Ambient top glow ──────────────────────────────────── */
+    .glow-top {
+      position: fixed;
+      top: -220px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(233,168,37,0.055) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ────────────────────────────────────────────── */
+    .container {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Progress pill at top ──────────────────────────────── */
+    .top-bar {
+      display: flex;
+      justify-content: center;
+      padding: 2rem 0 0;
+      opacity: 0;
+      animation: fadeDown 0.6s ease 0.1s forwards;
+    }
+
+    .top-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.35em 1em;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .top-pill-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ── Hero ──────────────────────────────────────────────── */
+    .hero {
+      padding: 5rem 0 3.5rem;
+      text-align: center;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 1.75rem;
+      opacity: 0;
+      animation: fadeUp 0.7s ease 0.3s forwards;
+    }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.8rem, 7vw, 5rem);
+      font-weight: 300;
+      color: var(--white);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.45s forwards;
+    }
+
+    .hero-title span {
+      display: block;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--gold);
+    }
+
+    .rule {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+      margin: 0 auto 2rem;
+      opacity: 0;
+      animation: fadeIn 0.6s ease 0.7s forwards;
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      max-width: 520px;
+      margin: 0 auto 3rem;
+      color: var(--text);
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.8s forwards;
+    }
+
+    /* Decorative waveform */
+    .hero-waveform {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      opacity: 0;
+      animation: fadeIn 1s ease 1s forwards;
+    }
+
+    .wv-bar {
+      display: block;
+      width: 3px;
+      border-radius: 3px;
+      background: var(--gold);
+      opacity: 0.25;
+      height: var(--h, 10px);
+    }
+
+    /* ── Sections ──────────────────────────────────────────── */
+    section {
+      padding: 3.5rem 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .label {
+      font-size: 0.64rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 0.6rem;
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 400;
+      color: var(--white);
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .section-body {
+      font-size: 0.95rem;
+      color: var(--text);
+      max-width: 600px;
+      line-height: 1.75;
+    }
+
+    /* ── Audio Primer Card ─────────────────────────────────── */
+    .primer-card {
+      margin-top: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .primer-top {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 1.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .primer-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(233,168,37,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .primer-meta .primer-eyebrow {
+      font-size: 0.62rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.25rem;
+    }
+
+    .primer-track {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem;
+      color: var(--white);
+      font-weight: 400;
+    }
+
+    /* Custom player */
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1.5rem 1.75rem;
+    }
+
+    .play-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.18s ease, background 0.18s;
+      box-shadow: 0 4px 20px rgba(233,168,37,0.25);
+    }
+
+    .play-btn:hover  { transform: scale(1.07); background: #f0b830; }
+    .play-btn:active { transform: scale(0.94); }
+
+    .play-btn svg { fill: #09090d; width: 17px; height: 17px; }
+    .play-btn svg.pause-icon { margin-left: 0; }
+    .play-btn svg.play-icon  { margin-left: 2px; }
+
+    .waveform-wrap {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+      position: relative;
+    }
+
+    #waveformCanvas {
+      width: 100%;
+      height: 72px;
+      display: block;
+      border-radius: 3px;
+      margin-bottom: 0.55rem;
+    }
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+    }
+
+    .waveform-loading {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Test Cards ────────────────────────────────────────── */
+    .tests-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 2.25rem;
+    }
+
+    @media (max-width: 680px) {
+      .tests-grid { grid-template-columns: 1fr; }
+    }
+
+    .test-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.25s;
+    }
+
+    .test-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top left, var(--gold-glow), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .test-card:hover { border-color: rgba(233,168,37,0.25); transform: translateY(-4px); }
+    .test-card:hover::before { opacity: 1; }
+
+    .test-card-top-line {
+      position: absolute;
+      top: 0;
+      left: 1.5rem;
+      right: 1.5rem;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .test-card:hover .test-card-top-line { opacity: 0.6; }
+
+    .test-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 4rem;
+      font-weight: 300;
+      color: rgba(233,168,37,0.12);
+      line-height: 1;
+      position: absolute;
+      top: 0.75rem;
+      right: 1.25rem;
+      user-select: none;
+    }
+
+    .test-type-tag {
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .test-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      color: var(--white);
+      font-weight: 400;
+      margin-bottom: 0.6rem;
+      line-height: 1.2;
+    }
+
+    .clips-badge {
+      display: inline-block;
+      font-size: 0.66rem;
+      letter-spacing: 0.06em;
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 1px solid rgba(233,168,37,0.2);
+      border-radius: 100px;
+      padding: 0.12em 0.65em;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    .test-desc {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    .test-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 1.1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .tag {
+      font-size: 0.66rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.18em 0.65em;
+      color: var(--muted);
+    }
+
+    /* ── Guidelines ────────────────────────────────────────── */
+    .guide-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 560px) {
+      .guide-grid { grid-template-columns: 1fr; }
+    }
+
+    .guide-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+    }
+
+    .guide-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--gold-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+    }
+
+    .guide-text {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .guide-text strong { color: var(--white); font-weight: 500; }
+
+    /* ── Consent ───────────────────────────────────────────── */
+    .consent-card {
+      margin-top: 2rem;
+      background: var(--surface);
+      border: 1px solid rgba(233,168,37,0.18);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.1rem 1.5rem;
+    }
+
+    .consent-row:not(:last-child) {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .consent-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      border: 1px solid rgba(233,168,37,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+
+    .consent-check svg { width: 10px; height: 10px; fill: var(--gold); }
+
+    .consent-text {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .consent-text strong { color: var(--white); font-weight: 500; }
+
+    /* ── Footer ────────────────────────────────────────────── */
+    .footer {
+      padding: 4rem 0 5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-rule {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      margin: 0 auto 2rem;
+      opacity: 0.4;
+    }
+
+    .footer-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 300;
+      color: var(--white);
+      margin-bottom: 0.6rem;
+    }
+
+    .footer-sub {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    /* ── Scroll reveal ─────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+
+    /* ── Keyframes ─────────────────────────────────────────── */
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+  </style>
+</head>
+<body>
+  <div class="glow-top"></div>
+
+  <div class="container">
+
+    <!-- Top pill -->
+    <div class="top-bar">
+      <div class="top-pill">
+        <span class="top-pill-dot"></span>
+        Final Year Project &nbsp;·&nbsp; Human Evaluation Study
+      </div>
+    </div>
+
+    <!-- ── HERO ───────────────────────────────────────────── -->
+    <header class="hero">
+      <p class="hero-eyebrow">AI Music Generation</p>
+      <h1 class="hero-title">
+        Listening Test
+        <span>Participant Guide</span>
+      </h1>
+      <div class="rule"></div>
+      <p class="hero-desc">
+        You've been invited to take part in a subjective listening study comparing
+        AI&#8209;generated music against human&#8209;composed pieces — all rendered from MIDI.
+      </p>
+      <div class="hero-waveform" id="heroWave"></div>
+    </header>
+
+    <!-- ── MIDI PRIMER ────────────────────────────────────── -->
+    <section class="reveal">
+      <p class="label">Before You Begin</p>
+      <h2 class="section-title">Familiarise Yourself with MIDI</h2>
+      <p class="section-body">
+        All clips in this study are rendered from MIDI — a format that may sound different from
+        standard recordings. Listen to this sample track first to calibrate your ears before
+        you start any test.
+      </p>
+
+      <div class="primer-card">
+        <div class="primer-top">
+          <div class="primer-icon-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </div>
+          <div class="primer-meta">
+            <p class="primer-eyebrow">MIDI Sample</p>
+            <p class="primer-track">Quit Playing Games (With My Heart) — Backstreet Boys</p>
+          </div>
+        </div>
+
+        <audio id="audio" src="assets/audio/Back-Street-Boys.wav" preload="metadata"></audio>
+
+        <div class="player">
+          <button class="play-btn" id="playBtn" aria-label="Play / Pause">
+            <svg class="play-icon" id="btnIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+
+          <div class="waveform-wrap" id="waveformWrap">
+            <canvas id="waveformCanvas"></canvas>
+            <div class="time-row">
+              <span id="currentTime">0:00</span>
+              <span id="duration">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── THE THREE TESTS ────────────────────────────────── -->
+    <section class="reveal">
+      <p class="label">Study Structure</p>
+      <h2 class="section-title">Three Tests, One Session</h2>
+      <p class="section-body">
+        You'll complete three online tests in sequence. Each takes approximately 15–20 minutes.
+        I'll send you a personalised link for each one when it's ready.
+      </p>
+
+      <div class="tests-grid">
+        <div class="test-card reveal">
+          <div class="test-card-top-line"></div>
+          <span class="test-num">1</span>
+          <p class="test-type-tag">MOS Test</p>
+          <h3 class="test-name">Quality<br>Rating</h3>
+          <span class="clips-badge">9 clips</span>
+          <p class="test-desc">
+            Listen to each clip in full, then rate it across five musical quality criteria
+            using a 1–5 scale from Bad to Excellent.
+          </p>
+          <div class="test-tags">
+            <span class="tag">Structural Coherence</span>
+            <span class="tag">Musical Flow</span>
+            <span class="tag">+3 criteria</span>
+          </div>
+        </div>
+
+        <div class="test-card reveal reveal-delay-1">
+          <div class="test-card-top-line"></div>
+          <span class="test-num">2</span>
+          <p class="test-type-tag">A/B Test</p>
+          <h3 class="test-name">Side-by-Side<br>Comparison</h3>
+          <span class="clips-badge">9 pairs</span>
+          <p class="test-desc">
+            Listen to two clips side by side and choose which you prefer across
+            two specific dimensions.
+          </p>
+          <div class="test-tags">
+            <span class="tag">Structural Coherence</span>
+            <span class="tag">Overall Quality</span>
+          </div>
+        </div>
+
+        <div class="test-card reveal reveal-delay-2">
+          <div class="test-card-top-line"></div>
+          <span class="test-num">3</span>
+          <p class="test-type-tag">Turing Test</p>
+          <h3 class="test-name">Human<br>or AI?</h3>
+          <span class="clips-badge">10 clips</span>
+          <p class="test-desc">
+            Listen to each clip and decide whether it was composed by a human
+            or generated by an AI. Trust your instincts.
+          </p>
+          <div class="test-tags">
+            <span class="tag">Human-composed</span>
+            <span class="tag">AI-generated</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── GUIDELINES ─────────────────────────────────────── -->
+    <section class="reveal">
+      <p class="label">Format Guidelines</p>
+      <h2 class="section-title">What to Expect</h2>
+
+      <div class="guide-grid">
+        <div class="guide-item">
+          <div class="guide-icon">🎧</div>
+          <p class="guide-text"><strong>Use headphones</strong> — audio detail matters for accurate judgements.</p>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">▶</div>
+          <p class="guide-text"><strong>Listen fully</strong> — each clip must be heard to completion before rating.</p>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">✓</div>
+          <p class="guide-text"><strong>All ratings mandatory</strong> — every question must be answered before continuing.</p>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">⚠</div>
+          <p class="guide-text"><strong>Don't refresh the page</strong> — it resets your progress back to the start.</p>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">←</div>
+          <p class="guide-text"><strong>Use "Previous"</strong> in the test to go back — not your browser's back button.</p>
+        </div>
+        <div class="guide-item">
+          <div class="guide-icon">🪪</div>
+          <p class="guide-text"><strong>Participant ID</strong> — enter your assigned ID at the end of each test.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CONSENT ────────────────────────────────────────── -->
+    <section class="reveal">
+      <p class="label">Consent Reminder</p>
+      <h2 class="section-title">Before Each Test Begins</h2>
+      <p class="section-body">
+        Each test opens with a consent page. By clicking <strong style="color:var(--white)">"I Agree"</strong> you confirm:
+      </p>
+
+      <div class="consent-card">
+        <div class="consent-row">
+          <div class="consent-check">
+            <svg viewBox="0 0 12 10"><polyline points="1,5 4.5,8.5 11,1" stroke="#e9a825" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <p class="consent-text">You understand the purpose of the study and it has been explained to you.</p>
+        </div>
+        <div class="consent-row">
+          <div class="consent-check">
+            <svg viewBox="0 0 12 10"><polyline points="1,5 4.5,8.5 11,1" stroke="#e9a825" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <p class="consent-text">Your responses will be recorded <strong>anonymously</strong>.</p>
+        </div>
+        <div class="consent-row">
+          <div class="consent-check">
+            <svg viewBox="0 0 12 10"><polyline points="1,5 4.5,8.5 11,1" stroke="#e9a825" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <p class="consent-text">Your participation is entirely <strong>voluntary</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FOOTER ─────────────────────────────────────────── -->
+    <footer class="footer reveal">
+      <div class="footer-rule"></div>
+      <p class="footer-title">Thank you for participating.</p>
+      <p class="footer-sub">Questions? Reach out and I'll be happy to help.</p>
+    </footer>
+
+  </div>
+
+  <script>
+    // ── Hero waveform ──────────────────────────────────
+    (function() {
+      const el = document.getElementById('heroWave');
+      const heights = [5,8,13,19,26,33,26,38,22,30,16,24,18,28,12,18,8,12,6];
+      heights.forEach((h, i) => {
+        const s = document.createElement('span');
+        s.className = 'wv-bar';
+        s.style.setProperty('--h', h + 'px');
+        s.style.setProperty('--d', (0.7 + Math.random() * 0.9).toFixed(2) + 's');
+        s.style.setProperty('--delay', (i * 0.055).toFixed(2) + 's');
+        el.appendChild(s);
+      });
+    })();
+
+    // ── Waveform audio player ──────────────────────────
+    (function() {
+      const audio   = document.getElementById('audio');
+      const playBtn = document.getElementById('playBtn');
+      const btnIcon = document.getElementById('btnIcon');
+      const canvas  = document.getElementById('waveformCanvas');
+      const wrapEl  = document.getElementById('waveformWrap');
+      const curEl   = document.getElementById('currentTime');
+      const durEl   = document.getElementById('duration');
+
+      const PLAY_PATH  = 'M8 5v14l11-7z';
+      const PAUSE_PATH = 'M6 19h4V5H6v14zm8-14v14h4V5h-4z';
+      const NUM_BARS   = 160;
+      const GOLD       = '#e9a825';
+      const GOLD_MIR   = 'rgba(233,168,37,0.38)';
+      const DIM        = 'rgba(255,255,255,0.1)';
+      const DIM_MIR    = 'rgba(255,255,255,0.045)';
+      const HOVER_LINE = 'rgba(255,255,255,0.25)';
+
+      let peaks      = [];
+      let hoverPct   = -1;
+      let ctx        = canvas.getContext('2d');
+
+      function fmt(s) {
+        const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+        return m + ':' + String(sec).padStart(2, '0');
+      }
+
+      // ── Canvas sizing ──────────────────────────────
+      function setupCanvas() {
+        const dpr  = window.devicePixelRatio || 1;
+        const cssW = wrapEl.clientWidth;
+        const cssH = 72;
+        canvas.width  = cssW * dpr;
+        canvas.height = cssH * dpr;
+        ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        return { cssW, cssH };
+      }
+
+      // ── Draw waveform ──────────────────────────────
+      function draw() {
+        const { cssW, cssH } = setupCanvas();
+        if (!peaks.length) return;
+
+        const progress  = audio.duration ? audio.currentTime / audio.duration : 0;
+        const midY      = cssH / 2;
+        const gap       = 1.5;
+        const barW      = (cssW - (NUM_BARS - 1) * gap) / NUM_BARS;
+        const playedIdx = Math.floor(progress * NUM_BARS);
+        const hoverIdx  = hoverPct >= 0 ? Math.floor(hoverPct * NUM_BARS) : -1;
+
+        ctx.clearRect(0, 0, cssW, cssH);
+
+        peaks.forEach((peak, i) => {
+          const x        = i * (barW + gap);
+          const topH     = Math.max(1.5, peak * (midY - 4) * 0.97);
+          const botH     = topH * 0.45;
+          const isPlayed = i < playedIdx;
+          const isHover  = hoverIdx >= 0 && i <= hoverIdx && !isPlayed;
+
+          // top bar
+          ctx.fillStyle = isPlayed ? GOLD : isHover ? 'rgba(233,168,37,0.4)' : DIM;
+          ctx.fillRect(x, midY - topH, barW, topH);
+
+          // bottom reflection
+          ctx.fillStyle = isPlayed ? GOLD_MIR : isHover ? 'rgba(233,168,37,0.18)' : DIM_MIR;
+          ctx.fillRect(x, midY + 1, barW, botH);
+        });
+
+        // hover seek line
+        if (hoverIdx >= 0 && hoverPct > 0) {
+          const lineX = hoverIdx * (barW + gap) + barW / 2;
+          ctx.fillStyle = HOVER_LINE;
+          ctx.fillRect(lineX, 0, 1, cssH);
+        }
+      }
+
+      // ── Extract peaks from audio file ──────────────
+      async function buildWaveform() {
+        try {
+          const res    = await fetch('assets/audio/Back-Street-Boys.wav');
+          const buf    = await res.arrayBuffer();
+          const actx   = new (window.AudioContext || window.webkitAudioContext)();
+          const decoded = await actx.decodeAudioData(buf);
+          const data   = decoded.getChannelData(0);
+          const step   = Math.floor(data.length / NUM_BARS);
+
+          const raw = [];
+          for (let i = 0; i < NUM_BARS; i++) {
+            let max = 0;
+            for (let j = 0; j < step; j++) {
+              const v = Math.abs(data[i * step + j]);
+              if (v > max) max = v;
+            }
+            raw.push(max);
+          }
+
+          const maxVal = Math.max(...raw);
+          peaks = raw.map(p => p / maxVal);
+        } catch (_) {
+          // Fallback: plausible-looking pseudo waveform
+          const seed = [0.2,0.4,0.55,0.7,0.85,0.95,0.88,0.75,0.6,0.45,0.35,0.5,0.65,0.8,0.9,0.75,0.55,0.4,0.3];
+          peaks = Array.from({ length: NUM_BARS }, (_, i) => {
+            const base = seed[i % seed.length];
+            return Math.min(1, Math.max(0.08, base + (Math.random() - 0.5) * 0.2));
+          });
+        }
+        draw();
+      }
+
+      // ── Events ─────────────────────────────────────
+      audio.addEventListener('loadedmetadata', () => {
+        durEl.textContent = fmt(audio.duration);
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (!audio.duration) return;
+        curEl.textContent = fmt(audio.currentTime);
+        draw();
+      });
+
+      audio.addEventListener('ended', () => {
+        btnIcon.innerHTML = '<path d="' + PLAY_PATH + '"/>';
+        btnIcon.className = 'play-icon';
+        curEl.textContent = '0:00';
+        draw();
+      });
+
+      playBtn.addEventListener('click', () => {
+        if (audio.paused) {
+          audio.play();
+          btnIcon.innerHTML = '<path d="' + PAUSE_PATH + '"/>';
+          btnIcon.className = 'pause-icon';
+        } else {
+          audio.pause();
+          btnIcon.innerHTML = '<path d="' + PLAY_PATH + '"/>';
+          btnIcon.className = 'play-icon';
+        }
+      });
+
+      canvas.addEventListener('click', e => {
+        if (!audio.duration) return;
+        const r = canvas.getBoundingClientRect();
+        audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+      });
+
+      canvas.addEventListener('mousemove', e => {
+        const r = canvas.getBoundingClientRect();
+        hoverPct = (e.clientX - r.left) / r.width;
+        draw();
+      });
+
+      canvas.addEventListener('mouseleave', () => {
+        hoverPct = -1;
+        draw();
+      });
+
+      window.addEventListener('resize', draw);
+
+      buildWaveform();
+    })();
+
+    // ── Scroll reveal ──────────────────────────────────
+    (function() {
+      const els = document.querySelectorAll('.reveal');
+      const io  = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      els.forEach(el => io.observe(el));
+    })();
+  </script>
+</body>
+</html>
