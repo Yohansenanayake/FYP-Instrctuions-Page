@@ -507,6 +507,88 @@
 
     .consent-text strong { color: var(--dark); font-weight: 600; }
 
+    /* ── Test Access ──────────────────────────────────── */
+    .access-card {
+      margin-top: 2rem;
+      background: var(--surface);
+      border: 1px solid rgba(255,85,0,0.2);
+      border-radius: 18px;
+      padding: 2.25rem 2rem;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      max-width: 560px;
+    }
+
+    .access-card p {
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+    }
+
+    .access-input-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .access-input {
+      flex: 1;
+      min-width: 200px;
+      height: 48px;
+      padding: 0 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--dark);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .access-input::placeholder { color: var(--muted); }
+
+    .access-input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255,85,0,0.1);
+    }
+
+    .access-input.error {
+      border-color: #e53e3e;
+      box-shadow: 0 0 0 3px rgba(229,62,62,0.1);
+    }
+
+    .access-btn {
+      height: 48px;
+      padding: 0 1.5rem;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+      box-shadow: 0 4px 14px rgba(255,85,0,0.3);
+    }
+
+    .access-btn:hover  { background: #e64d00; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(255,85,0,0.4); }
+    .access-btn:active { transform: translateY(0); }
+    .access-btn:disabled { background: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+    .access-feedback {
+      margin-top: 0.85rem;
+      font-size: 0.875rem;
+      min-height: 1.2em;
+    }
+
+    .access-feedback.err  { color: #c0392b; }
+    .access-feedback.ok   { color: #27ae60; font-weight: 500; }
+
     /* ── Footer ───────────────────────────────────────── */
     .footer {
       padding: 4rem 0 5rem;
@@ -747,6 +829,29 @@
       </div>
     </section>
 
+    <!-- ── TEST ACCESS ──────────────────────────────── -->
+    <section class="reveal">
+      <p class="label">Access Your Test</p>
+      <h2 class="section-title">Ready to Begin?</h2>
+      <div class="access-card">
+        <p>Enter the email address you registered with to access your personalised test link.</p>
+        <div class="access-input-row">
+          <input
+            class="access-input"
+            id="accessEmail"
+            type="email"
+            placeholder="your@email.com"
+            autocomplete="email"
+          />
+          <button class="access-btn" id="accessBtn">
+            Go to My Test
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
+        <p class="access-feedback" id="accessFeedback"></p>
+      </div>
+    </section>
+
     <!-- ── FOOTER ────────────────────────────────────── -->
     <footer class="footer reveal">
       <div class="footer-rule"></div>
@@ -918,6 +1023,62 @@
       draw();
 
       buildWaveform(); // replaces placeholder with real peaks when ready
+    })();
+
+    // ── Test access lookup ───────────────────────────────
+    (function() {
+      const emailEl    = document.getElementById('accessEmail');
+      const btn        = document.getElementById('accessBtn');
+      const feedback   = document.getElementById('accessFeedback');
+      let participants = null;
+
+      async function getParticipants() {
+        if (participants) return participants;
+        const res   = await fetch('assets/test-links/participants.json');
+        participants = await res.json();
+        return participants;
+      }
+
+      async function handleLookup() {
+        const email = emailEl.value.trim().toLowerCase();
+        if (!email) {
+          emailEl.classList.add('error');
+          feedback.textContent = 'Please enter your email address.';
+          feedback.className = 'access-feedback err';
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Looking up…';
+        feedback.textContent = '';
+        emailEl.classList.remove('error');
+
+        try {
+          const list        = await getParticipants();
+          const participant = list.find(p => p.email.toLowerCase() === email);
+
+          if (participant) {
+            feedback.textContent = 'Redirecting you to your test, ' + participant.name + '…';
+            feedback.className   = 'access-feedback ok';
+            setTimeout(() => { window.location.href = participant.url; }, 800);
+          } else {
+            emailEl.classList.add('error');
+            feedback.textContent = 'Email not found. Please check your address or contact the researcher.';
+            feedback.className   = 'access-feedback err';
+            btn.disabled  = false;
+            btn.innerHTML = 'Go to My Test <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+          }
+        } catch (_) {
+          feedback.textContent = 'Could not load participant list. Please try again.';
+          feedback.className   = 'access-feedback err';
+          btn.disabled  = false;
+          btn.innerHTML = 'Go to My Test <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+        }
+      }
+
+      btn.addEventListener('click', handleLookup);
+      emailEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleLookup(); });
+      emailEl.addEventListener('input', () => emailEl.classList.remove('error'));
     })();
 
     // ── Scroll reveal ────────────────────────────────────
