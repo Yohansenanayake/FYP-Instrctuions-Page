@@ -16,5 +16,6 @@
   { "email": "leenrdm93@gmail.com",              "name": "Leen Muthukuda",         "id": "L10", "url": "https://musixltm.perapulse.org/?config=randomized/l10_mos.yaml" },
   { "email": "tharindusenavirathna26@gmail.com", "name": "Tharindu Senavirathna",  "id": "L26", "url": "https://musixltm.perapulse.org/?config=randomized/l26_mos.yaml" },
   { "email": "malithwijey@gmail.com",            "name": "Malith Wijekoon",        "id": "L27", "url": "https://musixltm.perapulse.org/?config=randomized/l27_mos.yaml" },
-  { "email": "testuser@gmail.com",               "name": "Test User",              "id": "L20", "url": "https://musixltm.perapulse.org/?config=randomized/l20_mos.yaml" }
+  { "email": "testuser@gmail.com",               "name": "Test User",              "id": "L20", "url": "https://musixltm.perapulse.org/?config=randomized/l20_mos.yaml" },
+  { "email": "suramyabandaranayaka@gmail.com",   "name": "Sayurangi Jayalath",     "id": "L11", "url": "https://musixltm.perapulse.org/?config=randomized/l11_mos.yaml" }
 ]
